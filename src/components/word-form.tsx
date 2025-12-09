@@ -4,12 +4,15 @@ import changeFen from '../utils/changeFen';
 import fenToBoard from '../utils/fenToBoard';
 import Message from './message';
 import { localDictionary } from '../utils/constants';
+import { socket } from '../socket';
 
 type WordFormProps = {
   selectedCell: { x: number; y: number } | null;
   fen: string;
   setFen: (fen: string) => void;
   setSelectedCell: (pos: { x: number; y: number } | null) => void;
+  roomId: string;
+  isEnabled: boolean;
 };
 
 const WordForm = ({
@@ -44,6 +47,7 @@ const WordForm = ({
       return;
     }
 
+    socket.emit('move', { fen: newFen, word: upperWord });
     setFen(newFen);
     setLetter('');
     setWord('');
