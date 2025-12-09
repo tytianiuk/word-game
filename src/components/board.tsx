@@ -1,66 +1,41 @@
 'use client';
-import { useState, useEffect } from 'react';
+
 import fenToBoard from '../utils/fenToBoard';
 
-type BoardProps = {
+interface BoardProps {
   size: number;
-  setSelectedCell: (pos: { x: number; y: number }) => void;
-  selectedCell: { x: number; y: number } | null;
   fen: string;
-  isSpectator: boolean;
-};
+  selectedCell: { x: number; y: number } | null;
+  onSelectCell: (cell: { x: number; y: number }) => void;
+}
 
-const Board = ({
-  size,
-  setSelectedCell,
-  selectedCell,
-  fen,
-  isSpectator,
-}: BoardProps) => {
-  const [grid, setGrid] = useState<string[][]>([]);
-  const [selected, setSelected] = useState<{ y: number; x: number } | null>(
-    selectedCell
-  );
-
-  useEffect(() => {
-    setGrid(fenToBoard(fen));
-    setSelected(selectedCell);
-  }, [fen, selectedCell]);
-
-  const handleClick = (row: number, col: number, isSpec: boolean) => {
-    if (isSpec) return;
-    if (grid[row][col] === '') {
-      setSelectedCell({ x: col, y: row });
-    }
-  };
+const Board = ({ size, fen, selectedCell, onSelectCell }: BoardProps) => {
+  const board = fenToBoard(fen);
 
   return (
-    <div className="flex flex-col items-center">
+    <div className="card p-6">
       <div
-        className="grid border-4 border-gray-400 shadow-lg"
-        style={{
-          gridTemplateColumns: `repeat(${size}, 1fr)`,
-          width: 600,
-          height: 600,
-        }}
+        className="grid gap-1"
+        style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
       >
-        {grid.map((row, y) =>
-          row.map((cell, x) => {
-            const isSelected = selected?.y === y && selected?.x === x;
-            return (
-              <div
-                key={`${y}-${x}`}
-                onClick={() => handleClick(y, x, isSpectator)}
-                className={`flex items-center justify-center border text-3xl font-bold cursor-pointer select-none 
-                  ${isSelected ? 'border-4 border-red-600' : 'border-gray-700'}
-                  ${cell === '' ? 'bg-white' : 'bg-gray-100'}
-                  aspect-square
-                `}
-              >
-                {cell}
-              </div>
-            );
-          })
+        {board.map((row, y) =>
+          row.map((letter, x) => (
+            <button
+              key={`${y}-${x}`}
+              onClick={() => {
+                if (!letter) onSelectCell({ x, y });
+              }}
+              className={`w-20 h-20 rounded-lg font-bold text-lg transition-all transform hover:scale-105 ${
+                selectedCell?.x === x && selectedCell?.y === y
+                  ? 'bg-primary text-primary-foreground shadow-lg scale-110'
+                  : letter
+                  ? 'bg-secondary text-secondary-foreground shadow-md'
+                  : 'bg-muted hover:bg-muted/80'
+              }`}
+            >
+              {letter}
+            </button>
+          ))
         )}
       </div>
     </div>

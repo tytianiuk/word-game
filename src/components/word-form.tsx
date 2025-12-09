@@ -1,102 +1,90 @@
+'use client';
+
+import type React from 'react';
+
 import { useState } from 'react';
 import isValidMove from '../utils/isValidMove';
 import changeFen from '../utils/changeFen';
 import fenToBoard from '../utils/fenToBoard';
-import Message from './message';
 import { localDictionary } from '../utils/constants';
-import { socket } from '../socket';
 
-type WordFormProps = {
+interface WordFormProps {
   selectedCell: { x: number; y: number } | null;
   fen: string;
-  setFen: (fen: string) => void;
-  setSelectedCell: (pos: { x: number; y: number } | null) => void;
-  roomId: string;
-  isEnabled: boolean;
-};
+  onWordPlaced: (newFen: string, word: string) => void;
+}
 
-const WordForm = ({
-  selectedCell,
-  fen,
-  setFen,
-  setSelectedCell,
-}: WordFormProps) => {
-  const [letter, setLetter] = useState('');
+const WordForm = ({ selectedCell, fen, onWordPlaced }: WordFormProps) => {
   const [word, setWord] = useState('');
-  const [message, setMessage] = useState<string | null>(null);
+  const [newLetter, setNewLetter] = useState('');
+  const [error, setError] = useState('');
 
-  const showMessage = (msg: string) => {
-    setMessage(msg);
-    setTimeout(() => setMessage(null), 1500);
-  };
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    const wordUpper = word.toUpperCase();
 
-  const makeMove = () => {
-    if (!selectedCell) return;
+    if (!localDictionary.includes(wordUpper)) {
+      setError('Слова немає в словнику');
+      return;
+    }
+    const newFen = changeFen(selectedCell!, fen, newLetter);
+    const board = fenToBoard(newFen);
 
-    const upperWord = word.toUpperCase();
-    const newFen = changeFen(selectedCell, fen, letter);
-    const boardArr = fenToBoard(newFen);
-
-    if (!localDictionary.includes(upperWord)) {
-      showMessage(`❌ Слова "${upperWord}" немає у словнику`);
+    if (!isValidMove(board, wordUpper, selectedCell!)) {
+      setError('Неможливий хід');
       return;
     }
 
-    if (!isValidMove(boardArr, upperWord, selectedCell)) {
-      showMessage(`❌ Слово "${upperWord}" неможливо викласти на дошку`);
-      return;
-    }
-
-    socket.emit('move', { fen: newFen, word: upperWord });
-    setFen(newFen);
-    setLetter('');
+    onWordPlaced(newFen, word);
     setWord('');
-    setSelectedCell(null);
   };
 
   return (
-    <>
-      <form
-        className="flex gap-4 items-center bg-white py-6 rounded-xl shadow-lg w-4/5 text-3xl mx-auto"
-        onSubmit={(e) => {
-          e.preventDefault();
-          makeMove();
-        }}
-      >
-        <input
-          type="text"
-          name="letter-input"
-          id="letter-input"
-          maxLength={1}
-          required
-          value={letter}
-          placeholder="А"
-          autoComplete="off"
-          onChange={(e) => setLetter(e.target.value.toUpperCase())}
-          className="w-[64px] text-center px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-        />
-        <input
-          type="text"
-          name="word-input"
-          id="word-input"
-          required
-          placeholder="Введіть слово"
-          value={word}
-          autoComplete="off"
-          onChange={(e) => setWord(e.target.value.toUpperCase())}
-          className="flex-1 px-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400"
-        />
-        <input
-          disabled={!word || !letter || !selectedCell}
-          type="submit"
-          value="✔️"
-          className="px-3 py-3 border border-gray-300 text-white font-semibold rounded-lg hover:bg-gray-300 transition-colors cursor-pointer"
-        />
-      </form>
+    <form onSubmit={handleSubmit} className="card space-y-4">
+      <div className="flex space-x-4">
+        <div className="w-1/8">
+          <label className="block text-sm font-semibold text-foreground mb-2">
+            Нова буква
+          </label>
+          <input
+            type="text"
+            value={newLetter}
+            onChange={(e) =>
+              setNewLetter(e.target.value.slice(0, 1).toUpperCase())
+            }
+            maxLength={1}
+            placeholder="А"
+            className="w-full px-4 py-2 text-center text-lg font-bold bg-background border border-border rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
 
-      {message && <Message message={message!} />}
-    </>
+        <div className="w-7/8">
+          <label className="block text-sm font-semibold text-foreground mb-2">
+            Ваше слово
+          </label>
+          <input
+            type="text"
+            value={word}
+            onChange={(e) => setWord(e.target.value.toUpperCase())}
+            placeholder="Введіть слово укр. мовою"
+            className="w-full px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <p className="text-sm text-destructive font-semibold">{error}</p>
+      )}
+
+      <button
+        type="submit"
+        disabled={!word.trim() || !newLetter.trim() || !selectedCell}
+        className="btn-primary w-full"
+      >
+        Розмістити слово
+      </button>
+    </form>
   );
 };
-
 export default WordForm;
