@@ -31,7 +31,7 @@ io.on('connection', (socket) => {
     const room = {
       id: roomId,
       players: [{ id: socket.id, name: playerName, words: [], score: 0 }],
-      fen: '00000/00000/ТРАВА/00000/00000',
+      fen: 'ТРАВА/0РАВА/ТРАВА/ТРАВА/ТРАВА',
       currentTurn: playerName,
     };
 
@@ -159,6 +159,28 @@ io.on('connection', (socket) => {
           return;
         }
       });
+
+      const hasEmptyCells = fen.includes('0');
+
+      if (!hasEmptyCells) {
+        const winner = room.players.reduce((max, current) =>
+          current.score > max.score ? current : max
+        );
+
+        const gameResult = {
+          isGameOver: true,
+          winner: winner.name,
+          winnerScore: winner.score,
+          players: room.players.map((p) => ({
+            name: p.name,
+            score: p.score,
+            words: p.words,
+          })),
+        };
+
+        io.to(roomId).emit('game_over', gameResult);
+        return;
+      }
 
       const currentPlayerIndex = room.players.findIndex(
         (p) => p.name === room.currentTurn
