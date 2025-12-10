@@ -19,16 +19,49 @@ export default function Game() {
   const [fen, setFen] = useState('');
   const [players, setPlayers] = useState<Player[]>([]);
   const [score, setScore] = useState([0, 0]);
-  const [currentPlayerId, setCurrentPlayerId] = useState('');
+  const [currentTurn, setCurrentTurn] = useState('');
   const username = localStorage.getItem('username') || 'Player';
 
   useEffect(() => {
     const socket = initSocket();
+    const savedRoomId = localStorage.getItem('roomId');
+    const savedUsername = localStorage.getItem('username');
 
-    socket.emit('game_ready', { roomId, username });
+    if (savedRoomId && savedRoomId === roomId && savedUsername) {
+      socket.emit(
+        'rejoin_room',
+        {
+          roomId,
+          playerName: savedUsername,
+        },
+        (response: {
+          success: boolean;
+          players: Player[];
+          fen: string;
+          scores: number[];
+          currentTurn: string;
+          message?: string;
+        }) => {
+          if (response.success) {
+            setCurrentTurn(response.currentTurn);
+            setPlayers(response.players);
+            setFen(response.fen);
+            setScore(response.scores);
+          } else {
+            console.error('Rejoin failed:', response.message);
+            localStorage.removeItem('roomId');
+            localStorage.removeItem('username');
+            navigate('/');
+          }
+        }
+      );
+    } else {
+      socket.emit('game_ready', { roomId, username });
+      localStorage.setItem('roomId', roomId || '');
+    }
 
     socket.on('game_joined', (data) => {
-      setCurrentPlayerId(data.playerId);
+      setCurrentTurn(data.playerId);
       setPlayers(data.players);
       setFen(data.fen);
     });
@@ -52,13 +85,14 @@ export default function Game() {
       socket.off('player_joined');
       socket.off('board_updated');
     };
-  }, [roomId]);
+  }, [roomId, players]);
 
   const handleLeaveGame = () => {
     const socket = getSocket();
     if (socket) {
       socket.emit('leave_room', { roomId });
     }
+    localStorage.removeItem('roomId');
     navigate('/');
   };
 
@@ -85,7 +119,7 @@ export default function Game() {
             {players[0] && (
               <PlayerCard
                 player={players[0]}
-                isCurrentPlayer={currentPlayerId === players[0].name}
+                isCurrentPlayer={currentTurn === players[0].name}
                 score={score[0]}
               />
             )}
@@ -129,7 +163,7 @@ export default function Game() {
             {players[1] && (
               <PlayerCard
                 player={players[1]}
-                isCurrentPlayer={currentPlayerId === players[1].name}
+                isCurrentPlayer={currentTurn === players[1].name}
                 score={score[1]}
               />
             )}

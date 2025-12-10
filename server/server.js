@@ -15,6 +15,7 @@ const io = new Server(httpServer, {
 app.use(cors());
 
 const rooms = new Map();
+const playerSessions = new Map();
 
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
@@ -35,6 +36,12 @@ io.on('connection', (socket) => {
     };
 
     rooms.set(roomId, room);
+    playerSessions.set(`${roomId}_${playerName}`, {
+      socketId: socket.id,
+      roomId,
+      playerName,
+      createdAt: Date.now(),
+    });
     socket.join(roomId);
     callback({ success: true, roomId });
   });
@@ -55,10 +62,63 @@ io.on('connection', (socket) => {
     }
 
     room.players.push({ id: socket.id, name: playerName, words: [], score: 0 });
+    playerSessions.set(`${roomId}_${playerName}`, {
+      socketId: socket.id,
+      roomId,
+      playerName,
+      createdAt: Date.now(),
+    });
     socket.join(roomId);
 
     io.to(roomId).emit('player_joined', { players: room.players });
     callback({ success: true, roomId });
+  });
+
+  socket.on('rejoin_room', (data, callback) => {
+    const { roomId, playerName } = data;
+    const room = rooms.get(roomId);
+
+    if (!room) {
+      if (callback) callback({ success: false, message: 'Room not found' });
+      return;
+    }
+
+    const player = room.players.find((p) => p.name === playerName);
+
+    if (!player) {
+      if (callback)
+        callback({ success: false, message: 'Player not found in room' });
+      return;
+    }
+
+    player.id = socket.id;
+    playerSessions.set(`${roomId}_${playerName}`, {
+      socketId: socket.id,
+      roomId,
+      playerName,
+      createdAt: Date.now(),
+    });
+
+    socket.join(roomId);
+    const scores = room.players.map((p) => p.score);
+
+    if (callback) {
+      callback({
+        success: true,
+        players: room.players,
+        fen: room.fen,
+        scores,
+        currentTurn: room.currentTurn,
+      });
+    } else {
+      socket.emit('game_joined', {
+        currentTurn: room.currentTurn,
+        players: room.players,
+        fen: room.fen,
+      });
+    }
+
+    io.to(roomId).emit('player_rejoined', { players: room.players });
   });
 
   socket.on('game_ready', (data, callback) => {
@@ -66,11 +126,11 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
 
     if (room) {
-      const playerId = room.players.find(
+      const currentTurn = room.players.find(
         (p) => p.name === room.currentTurn
       )?.name;
       socket.emit('game_joined', {
-        playerId,
+        currentTurn,
         players: room.players,
         fen: room.fen,
       });
@@ -119,11 +179,11 @@ io.on('connection', (socket) => {
   socket.on('disconnect', () => {
     console.log(`User disconnected: ${socket.id}`);
     for (const [roomId, room] of rooms.entries()) {
-      room.players = room.players.filter((p) => p.id !== socket.id);
-      if (room.players.length === 0) {
-        rooms.delete(roomId);
-      } else {
-        io.to(roomId).emit('player_left', { players: room.players });
+      const playerIndex = room.players.findIndex((p) => p.id === socket.id);
+      if (playerIndex !== -1) {
+        console.log(
+          `Player ${room.players[playerIndex].name} disconnected from room ${roomId}`
+        );
       }
     }
   });
