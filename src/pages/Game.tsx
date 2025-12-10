@@ -74,6 +74,7 @@ export default function Game() {
       setPlayers(data.players);
       setFen(data.fen);
       setScore(data.scores);
+      setCurrentTurn(data.currentTurn);
     });
 
     socket.on('game_error', (data) => {
@@ -137,26 +138,41 @@ export default function Game() {
                 fen={fen}
                 selectedCell={selectedCell}
                 onSelectCell={setSelectedCell}
+                isCurrentTurn={currentTurn === username}
               />
             </div>
 
-            <WordForm
-              selectedCell={selectedCell}
-              fen={fen}
-              onWordPlaced={(newFen: SetStateAction<string>, word: string) => {
-                setFen(newFen);
-                const socket = getSocket();
-                if (socket) {
-                  socket.emit('place_word', {
-                    roomId,
-                    name: username,
-                    fen: newFen,
-                    word,
-                  });
-                }
-                setSelectedCell(null);
-              }}
-            />
+            {currentTurn === username && (
+              <WordForm
+                selectedCell={selectedCell}
+                fen={fen}
+                onWordPlaced={(
+                  newFen: SetStateAction<string>,
+                  word: string
+                ) => {
+                  setFen(newFen);
+                  const socket = getSocket();
+                  if (socket) {
+                    socket.emit('place_word', {
+                      roomId,
+                      name: username,
+                      fen: newFen,
+                      word,
+                    });
+                  }
+                  setSelectedCell(null);
+                }}
+              />
+            )}
+
+            {currentTurn !== username && (
+              <div className="card p-4 text-center text-muted-foreground">
+                Очікування ходу гравця:{' '}
+                <span className="font-semibold text-foreground">
+                  {currentTurn}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-2">

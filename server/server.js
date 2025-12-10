@@ -91,6 +91,7 @@ io.on('connection', (socket) => {
       return;
     }
 
+    // Update player's socket id to new connection
     player.id = socket.id;
     playerSessions.set(`${roomId}_${playerName}`, {
       socketId: socket.id,
@@ -112,7 +113,7 @@ io.on('connection', (socket) => {
       });
     } else {
       socket.emit('game_joined', {
-        currentTurn: room.currentTurn,
+        playerId: room.currentTurn,
         players: room.players,
         fen: room.fen,
       });
@@ -126,11 +127,11 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
 
     if (room) {
-      const currentTurn = room.players.find(
+      const playerId = room.players.find(
         (p) => p.name === room.currentTurn
       )?.name;
       socket.emit('game_joined', {
-        currentTurn,
+        playerId,
         players: room.players,
         fen: room.fen,
       });
@@ -142,6 +143,13 @@ io.on('connection', (socket) => {
     const room = rooms.get(roomId);
 
     if (room) {
+      if (room.currentTurn !== name) {
+        console.log(
+          `Invalid move: ${name} tried to play but it's ${room.currentTurn}'s turn`
+        );
+        return;
+      }
+
       room.fen = fen;
 
       room.players.forEach((p) => {
@@ -152,11 +160,18 @@ io.on('connection', (socket) => {
         }
       });
 
+      const currentPlayerIndex = room.players.findIndex(
+        (p) => p.name === room.currentTurn
+      );
+      const nextPlayerIndex = (currentPlayerIndex + 1) % room.players.length;
+      room.currentTurn = room.players[nextPlayerIndex].name;
+
       const scores = room.players.map((p) => p.score);
       io.to(roomId).emit('board_updated', {
         fen,
         scores,
         players: room.players,
+        currentTurn: room.currentTurn,
       });
     }
   });
