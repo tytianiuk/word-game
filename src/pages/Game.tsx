@@ -6,7 +6,6 @@ import { initSocket, getSocket } from '../lib/socket';
 import Board from '../components/board';
 import PlayerCard from '../components/player-card';
 import WordForm from '../components/word-form';
-import ScoreDisplay from '../components/score';
 import type { Player } from '../types/player';
 import ResultMessage from '../components/result-message';
 import Header from '../components/header';
@@ -171,11 +170,6 @@ export default function Game() {
           </div>
 
           <div className="lg:col-span-8 space-y-6">
-            <ScoreDisplay
-              scores={score}
-              playerNames={players.map((p) => p.name)}
-            />
-
             <div className="flex justify-center">
               <Board
                 size={5}
