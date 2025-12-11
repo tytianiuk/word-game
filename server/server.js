@@ -2,6 +2,7 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import cors from 'cors';
+import fs from 'fs';
 
 const app = express();
 const httpServer = createServer(app);
@@ -17,6 +18,31 @@ app.use(cors());
 const rooms = new Map();
 const playerSessions = new Map();
 
+let ukrainianWords = new Set();
+let fiveLetterWords = [];
+
+try {
+  const wordsData = fs.readFileSync('public/ukrainian-words.txt', 'utf-8');
+  const words = wordsData.toLowerCase().match(/[а-яіїєґ]+/g) || [];
+  ukrainianWords = new Set(words);
+  fiveLetterWords = words.filter((word) => word.length === 5);
+} catch (error) {
+  console.error('Error loading words dictionary:', error);
+}
+
+const getRandomFiveLetterWord = () => {
+  if (fiveLetterWords.length === 0) return null;
+  return fiveLetterWords[Math.floor(Math.random() * fiveLetterWords.length)];
+};
+
+const placeWordInCenter = (word) => {
+  const rows = ['00000', '00000', '00000', '00000', '00000'];
+  if (word && word.length === 5) {
+    rows[2] = word.toLowerCase();
+  }
+  return rows.join('/');
+};
+
 io.on('connection', (socket) => {
   console.log(`User connected: ${socket.id}`);
 
@@ -28,10 +54,13 @@ io.on('connection', (socket) => {
       return;
     }
 
+    const centerWord = getRandomFiveLetterWord();
+    const fen = placeWordInCenter(centerWord);
+
     const room = {
       id: roomId,
       players: [{ id: socket.id, name: playerName, words: [], score: 0 }],
-      fen: 'ТРАВА/0РАВА/ТРАВА/ТРАВА/ТРАВА',
+      fen: fen,
       currentTurn: playerName,
     };
 
@@ -91,7 +120,6 @@ io.on('connection', (socket) => {
       return;
     }
 
-    // Update player's socket id to new connection
     player.id = socket.id;
     playerSessions.set(`${roomId}_${playerName}`, {
       socketId: socket.id,

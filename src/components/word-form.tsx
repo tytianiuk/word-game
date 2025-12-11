@@ -6,15 +6,20 @@ import { useState } from 'react';
 import isValidMove from '../utils/isValidMove';
 import changeFen from '../utils/changeFen';
 import fenToBoard from '../utils/fenToBoard';
-import { localDictionary } from '../utils/constants';
 
 interface WordFormProps {
   selectedCell: { x: number; y: number } | null;
   fen: string;
+  formError?: string;
   onWordPlaced: (newFen: string, word: string) => void;
 }
 
-const WordForm = ({ selectedCell, fen, onWordPlaced }: WordFormProps) => {
+const WordForm = ({
+  selectedCell,
+  fen,
+  formError,
+  onWordPlaced,
+}: WordFormProps) => {
   const [word, setWord] = useState('');
   const [newLetter, setNewLetter] = useState('');
   const [error, setError] = useState('');
@@ -23,11 +28,6 @@ const WordForm = ({ selectedCell, fen, onWordPlaced }: WordFormProps) => {
     e.preventDefault();
     setError('');
     const wordUpper = word.toUpperCase();
-
-    if (!localDictionary.includes(wordUpper)) {
-      setError('Слова немає в словнику');
-      return;
-    }
     const newFen = changeFen(selectedCell!, fen, newLetter);
     const board = fenToBoard(newFen);
 
@@ -39,6 +39,8 @@ const WordForm = ({ selectedCell, fen, onWordPlaced }: WordFormProps) => {
     onWordPlaced(newFen, word);
     setWord('');
   };
+
+  const displayError = formError || error;
 
   return (
     <form onSubmit={handleSubmit} className="card space-y-4">
@@ -73,8 +75,8 @@ const WordForm = ({ selectedCell, fen, onWordPlaced }: WordFormProps) => {
         </div>
       </div>
 
-      {error && (
-        <p className="text-sm text-destructive font-semibold">{error}</p>
+      {displayError && (
+        <p className="text-sm text-destructive font-semibold">{displayError}</p>
       )}
 
       <button

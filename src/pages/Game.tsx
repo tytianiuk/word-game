@@ -10,6 +10,8 @@ import ScoreDisplay from '../components/score';
 import type { Player } from '../types/player';
 import ResultMessage from '../components/result-message';
 import Header from '../components/header';
+import { isValidWord, loadDictionary } from '../utils/wordValidator';
+import { checkWordUsage } from '../utils/checkWordUsage';
 
 export default function Game() {
   const { roomId } = useParams<{ roomId: string }>();
@@ -28,7 +30,12 @@ export default function Game() {
     winnerScore: number;
     players: Array<{ name: string; score: number; words: string[] }>;
   } | null>(null);
+  const [formError, setFormError] = useState('');
   const username = localStorage.getItem('username') || 'Player';
+
+  useEffect(() => {
+    loadDictionary();
+  });
 
   useEffect(() => {
     const socket = initSocket();
@@ -115,6 +122,31 @@ export default function Game() {
     navigate('/');
   };
 
+  const makeMove = (newFen: SetStateAction<string>, word: string) => {
+    if (!isValidWord(word)) {
+      setFormError(`Слово "${word}" не знайдено в словнику`);
+      return;
+    }
+
+    if (checkWordUsage(players, word)) {
+      setFormError(`Слово "${word}" вже було використано`);
+      return;
+    }
+
+    setFormError('');
+    setFen(newFen);
+    const socket = getSocket();
+    if (socket) {
+      socket.emit('place_word', {
+        roomId,
+        name: username,
+        fen: newFen,
+        word,
+      });
+    }
+    setSelectedCell(null);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-muted">
       <Header roomId={roomId!} handle={handleLeaveGame} />
@@ -158,22 +190,8 @@ export default function Game() {
               <WordForm
                 selectedCell={selectedCell}
                 fen={fen}
-                onWordPlaced={(
-                  newFen: SetStateAction<string>,
-                  word: string
-                ) => {
-                  setFen(newFen);
-                  const socket = getSocket();
-                  if (socket) {
-                    socket.emit('place_word', {
-                      roomId,
-                      name: username,
-                      fen: newFen,
-                      word,
-                    });
-                  }
-                  setSelectedCell(null);
-                }}
+                formError={formError}
+                onWordPlaced={makeMove}
               />
             )}
 
