@@ -1,6 +1,6 @@
 let ukrainianWords = new Set<string>();
 
-export async function loadDictionary() {
+export const loadDictionary = async () => {
   try {
     const response = await fetch('/ukrainian-words.txt');
     const wordsData = await response.text();
@@ -9,9 +9,9 @@ export async function loadDictionary() {
   } catch (error) {
     console.error('Error loading words dictionary:', error);
   }
-}
+};
 
-export function isValidWord(word: string): boolean {
+export const isValidWord = (word: string): boolean => {
   const normalizedWord = word.toLowerCase().trim();
   return normalizedWord.length >= 2 && ukrainianWords.has(normalizedWord);
-}
+};
