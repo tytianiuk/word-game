@@ -20,7 +20,7 @@ const Board = ({
   const board = fenToBoard(fen);
 
   return (
-    <div className="card p-6">
+    <div className="card p-3">
       <div
         className="grid gap-1"
         style={{ gridTemplateColumns: `repeat(${size}, minmax(0, 1fr))` }}
@@ -33,7 +33,7 @@ const Board = ({
                 if (!letter && isCurrentTurn) onSelectCell({ x, y });
               }}
               disabled={!isCurrentTurn}
-              className={`w-20 h-20 rounded-lg font-bold text-lg transition-all transform ${
+              className={`w-16 h-16 rounded-lg font-bold text-lg transition-all transform ${
                 !isCurrentTurn
                   ? 'opacity-50 cursor-not-allowed'
                   : 'hover:scale-105'
