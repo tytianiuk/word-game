@@ -2,7 +2,7 @@
 
 import type React from 'react';
 
-import { useState } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
 import isValidMove from '../utils/isValidMove';
 import changeFen from '../utils/changeFen';
 import fenToBoard from '../utils/fenToBoard';
@@ -11,6 +11,7 @@ interface WordFormProps {
   selectedCell: { x: number; y: number } | null;
   fen: string;
   formError?: string;
+  setFormError: Dispatch<SetStateAction<string>>;
   onWordPlaced: (newFen: string, word: string) => void;
 }
 
@@ -18,6 +19,7 @@ const WordForm = ({
   selectedCell,
   fen,
   formError,
+  setFormError,
   onWordPlaced,
 }: WordFormProps) => {
   const [word, setWord] = useState('');
@@ -27,6 +29,7 @@ const WordForm = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setFormError('');
     const wordUpper = word.toUpperCase();
     const newFen = changeFen(selectedCell!, fen, newLetter);
     const board = fenToBoard(newFen);

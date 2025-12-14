@@ -185,6 +185,7 @@ export default function Game() {
                 selectedCell={selectedCell}
                 fen={fen}
                 formError={formError}
+                setFormError={setFormError}
                 onWordPlaced={makeMove}
               />
             )}
