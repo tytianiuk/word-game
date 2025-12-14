@@ -1,69 +1,53 @@
-# React + TypeScript + Vite
+# Word Master - Багатокористувацька Гра в Слова
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Багатокористувацька гра в слова на сітці 5×5, де гравці складають слова, змагаючись за найбільшу кількість очок.
 
-Currently, two official plugins are available:
+## Опис проєкту
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Word Master - це онлайн гра для двох гравців, де кожен по черзі складає слова на дошці 5×5. Гра починається з випадкового 5-букв слова в центрі дошки. Гравці можуть ставити слова горизонтально або вертикально, використовуючи вже розміщені букви. За кожне валідне слово гравець отримує очки рівні довжині слова. Гра закінчується коли всі клітинки заповнені, і переможцем стає гравець з найбільшою кількістю очок.
 
-## Expanding the ESLint configuration
+## Встановлення та Запуск
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+### Встановлення залежностей
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Запуск додатку
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+#### 1. Запустіть сервер (термінал 1)
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+node server.js
 ```
+
+Сервер запуститься на `http://localhost:3000`
+
+#### 2. Запустіть клієнт (термінал 2)
+
+```bash
+npm run dev
+```
+
+Клієнт запуститься на `http://localhost:5173`
+
+## Як грати
+
+1. Відкрийте гру в браузері `http://localhost:5173`
+2. Введіть своє ім'я
+3. Створіть нову кімнату або приєднайтесь до існуючої за ID
+4. Поділіться ID кімнати з другим гравцем
+5. Коли обидва гравці приєдналися, почніть складати слова по черзі
+6. Клікайте на клітинки дошки, щоб вибрати позицію для слова
+7. Вводьте слово українською мовою
+8. Гра закінчується, коли дошка заповнена
+
+## Правила гри
+
+- Слова можна ставити лише горизонтально (зліва направо) або вертикально (зверху вниз)
+- Нове слово повинно використовувати хоча б одну вже розміщену букву
+- Кожне слово має бути валідним українським словом з словника
+- Гравець не може використовувати одне слово двічі
+- Очки нараховуються за довжину слова
+- Переможець визначається за найбільшою кількістю очок після заповнення всієї дошки
